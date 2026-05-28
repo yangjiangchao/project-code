@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翻墙数据可视化系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.8/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; }
+
+        /* ===== Header ===== */
+        .top-header {
+            background: linear-gradient(90deg, #1a6fb5 0%, #3b8fd8 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            height: 56px;
+            padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            position: relative;
+            z-index: 100;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .logo-text { font-size: 16px; font-weight: 600; letter-spacing: 1px; }
+        .logo-ver { font-size: 11px; opacity: 0.7; margin-left: 4px; }
+
+        /* ===== Tabs ===== */
+        .tabs-bar {
+            display: flex;
+            margin-left: 60px;
+            height: 56px;
+            align-items: flex-end;
+            gap: 0;
+        }
+        .tab-item {
+            padding: 0 22px;
+            height: 44px;
+            line-height: 44px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+        }
+        .tab-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .tab-item.active {
+            color: #fff;
+            font-weight: 600;
+        }
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 22px;
+            right: 22px;
+            height: 3px;
+            background: #fff;
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* ===== Search Area (always on top when search tab active) ===== */
+        .search-area {
+            background: #fff;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: none;
+        }
+        .search-area.visible { display: block; }
+        .search-bar-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .search-bar-top .search-label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .search-bar-top .search-input { flex: 1; min-width: 200px; }
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-chip {
+            padding: 6px 14px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #555;
+            cursor: pointer;
+            background: #fafafa;
+            transition: all 0.2s;
+        }
+        .filter-chip:hover, .filter-chip.active { border-color: #1a6fb5; color: #1a6fb5; background: #e8f4fd; }
+
+        /* ===== Main Content ===== */
+        .main-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 16px 24px 40px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* ===== Stats Summary Cards ===== */
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            text-align: center;
+            color: #fff;
+        }
+        .summary-card .num {
+            font-size: 36px;
+            font-weight: 700;
+        }
+        .summary-card .label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+        .summary-card .sub {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+        .summary-card.app { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3); }
+        .summary-card.server { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3); }
+
+        /* ===== Rank List ===== */
+        .rank-list-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .rank-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .rank-card .rank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .rank-card .rank-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .rank-card .rank-columns-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 28px 8px 48px;
+            font-size: 12px;
+            color: #999;
+            border-bottom: 1px solid #e8e8e8;
+            margin-bottom: 4px;
+        }
+        .rank-card .rank-columns-header .col-label { flex: 1; }
+        .rank-card .rank-columns-header .col-stat { width: 60px; text-align: right; font-weight: 500; }
+        .rank-card .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 13px;
+        }
+        .rank-card .rank-item:last-child { border-bottom: none; }
+        .rank-card .rank-item-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .rank-card .rank-item-right {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .rank-card .rank-item-count {
+            font-weight: 600;
+            color: #1a6fb5;
+            font-size: 12px;
+            width: 60px;
+            text-align: right;
+        }
+        .rank-card .rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-card .rank-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            margin-right: 8px;
+        }
+        .rank-card .rank-num.top1 { background: #ffd700; color: #fff; }
+        .rank-card .rank-num.top2 { background: #c0c0c0; color: #fff; }
+        .rank-card .rank-num.top3 { background: #cd7f32; color: #fff; }
+        .rank-card .rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-card .rank-value { font-weight: 600; color: #1a6fb5; font-size: 12px; }
+
+        /* ===== Tables ===== */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 600; color: #555; white-space: nowrap; }
+        tr:hover { background: #f8f9fc; }
+        .table-container { overflow-x: auto; }
+
+        /* ===== Search Result Cards (like reference image) ===== */
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+        }
+        .result-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .result-card .avatar-box {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #e8f4fd, #d0e8f7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .result-card .avatar-box svg { width: 28px; height: 28px; fill: #1a6fb5; }
+        .result-card .card-body { flex: 1; min-width: 0; }
+        .result-card .card-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .result-card .info-row {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.8;
+            flex-wrap: wrap;
+        }
+        .result-card .info-row .field { white-space: nowrap; }
+        .result-card .info-row .field span { color: #333; }
+        .result-card .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #e8f4fd;
+            color: #1a6fb5;
+        }
+        .result-card .actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .result-card .actions button {
+            padding: 4px 16px;
+            font-size: 12px;
+            background: #1a6fb5;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .result-card .actions button:hover { background: #1563a0; }
+        .result-card .icon-flag {
+            width: 16px; height: 16px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* ===== Detail page top20 ===== */
+        .top20-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .rank-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+        .rank-num.top1 { background: #ffd700; color: #fff; }
+        .rank-num.top2 { background: #c0c0c0; color: #fff; }
+        .rank-num.top3 { background: #cd7f32; color: #fff; }
+        .proto-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .proto-ss { background: #e3f2fd; color: #1976d2; }
+        .proto-vmess { background: #f3e5f5; color: #7b1fa2; }
+        .proto-trojan { background: #ffebee; color: #c62828; }
+        .proto-vless { background: #fff3e0; color: #e65100; }
+        .proto-default { background: #f5f5f5; color: #999; }
+
+        /* ===== Pagination ===== */
+        .pagination-container { display: flex; justify-content: flex-end; padding-top: 12px; }
+
+        /* ===== Detail Dialog ===== */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .detail-item { background: #f8f9fa; padding: 10px; border-radius: 6px; }
+        .detail-item .dl { font-size: 11px; color: #999; }
+        .detail-item .dv { font-size: 13px; color: #333; font-weight: 500; word-break: break-all; }
+
+        /* ===== Proxy Server Table ===== */
+        .proxy-table table th { text-align: center; }
+        .proxy-table table td { text-align: center; }
+
+        /* ===== Empty state ===== */
+        .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- ===== Top Header ===== -->
+    <div class="top-header">
+        <div class="logo-area">
+            <div class="logo-icon">&#9776;</div>
+            <span class="logo-text">翻墙数据可视化</span>
+            <span class="logo-ver">V1.0</span>
+        </div>
+        <div class="tabs-bar">
+            <div class="tab-item" :class="{active: currentTab==='stats'}" @click="switchTab('stats')">主页统计</div>
+            <div class="tab-item" :class="{active: currentTab==='detail'}" @click="switchTab('detail')">翻墙详情</div>
+            <div class="tab-item" :class="{active: currentTab==='search'}" @click="switchTab('search')">智能查询</div>
+        </div>
+    </div>
+
+    <!-- ===== Search bar (shown when search tab active) ===== -->
+    <div class="search-area" :class="{visible: currentTab==='search'}">
+        <div class="search-bar-top">
+            <span class="search-label">关键词</span>
+            <div class="search-input">
+                <el-input v-model="searchForm.keyword" placeholder="手机号/IMEI/IMSI/域名/包名/应用名" clearable @keyup.enter="handleSearch"></el-input>
+            </div>
+            <el-button type="primary" @click="handleSearch" :loading="searchLoading">查询</el-button>
+            <el-button @click="resetSearch">重置</el-button>
+        </div>
+        <div class="filter-row">
+            <el-select v-model="searchForm.domain" placeholder="网站标签" clearable style="width:140px" @change="autoSearch">
+                <el-option v-for="d in domainOptions" :key="d" :label="d" :value="d"></el-option>
+            </el-select>
+            <el-select v-model="searchForm.app_name" placeholder="应用名称" clearable style="width:140px" @change="autoSearch">
+                <el-option v-for="a in appOptions" :key="a" :label="a" :value="a"></el-option>
+            </el-select>
+            <el-select v-model="searchFilterProto" placeholder="翻墙协议" clearable style="width:140px" @change="autoSearch">
+                <el-option label="Shadowsocks" value="shadowsocks"></el-option>
+                <el-option label="Vmess" value="vmess"></el-option>
+                <el-option label="Trojan" value="trojan"></el-option>
+                <el-option label="Vless" value="vless"></el-option>
+            </el-select>
+            <el-select v-model="searchForm.tunnel_server_ip" placeholder="代理服务器 IP" clearable style="width:160px" @change="autoSearch">
+                <el-option v-for="s in serverOptions" :key="s" :label="s" :value="s"></el-option>
+            </el-select>
+        </div>
+    </div>
+
+    <!-- ===== Main Content Area ===== -->
+    <div class="main-content">
+
+        <!-- ==================== TAB: 主页统计 ==================== -->
+        <div v-show="currentTab==='stats'">
+            <!-- Summary -->
+            <div class="summary-row">
+                <div class="summary-card">
+                    <div class="num">{{ summary.total_users || 0 }}</div>
+                    <div class="label">翻墙行为总用户数</div>
+                    <div class="sub">今日：{{ summary.today_users || 0 }}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="num">{{ summary.total_apps || 0 }}</div>
+                    <div class="label">总应用数量</div>
+                    <div class="sub">今日：{{ summary.today_apps || 0 }}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="num">{{ summary.total_servers || 0 }}</div>
+                    <div class="label">总代理服务器数量</div>
+                    <div class="sub">今日：{{ summary.today_servers || 0 }}</div>
+                </div>
+            </div>
+
+            <!-- Time Range Selector -->
+            <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
+                <span style="font-size:14px;color:#666;font-weight:500;">时间维度:</span>
+                <el-select v-model="timeRange" style="width:120px" size="small" @change="loadRankData">
+                    <el-option label="近 7 天" value="7"></el-option>
+                    <el-option label="近 30 天" value="30"></el-option>
+                    <el-option label="全部" value="all"></el-option>
+                </el-select>
+            </div>
+
+            <!-- Rank Lists -->
+            <div class="rank-list-container">
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">① 安装应用</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in installAppRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.app_name || item.app_package_name || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">② 翻墙工具</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in tunnelToolRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.tool_name || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">③ 翻墙协议</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in protocolRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.tunnel_proto_type || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="rank-list-container">
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">④ 翻墙解密数据</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in decryptRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.domain || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">⑤ 机场网站</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in airportRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.domain || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+                <div class="rank-card">
+                    <div class="rank-header"><span class="rank-title">⑥ 代理服务器</span></div>
+                    <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
+                    <div class="rank-item" v-for="(item, idx) in proxyServerRank" :key="idx">
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.tunnel_server_ip || '-' }}</span></span>
+                        <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==================== TAB: 翻墙详情 ==================== -->
+        <div v-show="currentTab==='detail'">
+            <!-- App List -->
+            <div class="card">
+                <div class="top20-header">
+                    <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">安装应用使用详情</div>
+                    <el-pagination v-model:current-page="appListPage" :page-size="20" :total="appListTotal"
+                        layout="total, prev, pager, next" @current-change="loadAppList" small></el-pagination>
+                </div>
+                <table style="margin-top:10px;">
+                    <thead><tr><th>手机号</th><th>IMEI</th><th>IMSI</th><th>应用包名</th><th>应用名称</th><th>最近使用时间</th></tr></thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in appListData" :key="idx">
+                            <td>{{ item.mobile || '-' }}</td>
+                            <td>{{ item.imei || '-' }}</td>
+                            <td>{{ item.imsi || '-' }}</td>
+                            <td style="font-family:monospace;">{{ item.app_package_name }}</td>
+                            <td>{{ item.app_name || '-' }}</td>
+                            <td>{{ formatDate(item.capture_time) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tunnel List -->
+            <div class="card">
+                <div class="top20-header">
+                    <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">翻墙工具使用详情</div>
+                    <el-pagination v-model:current-page="tunnelListPage" :page-size="20" :total="tunnelListTotal"
+                        layout="total, prev, pager, next" @current-change="loadTunnelList" small></el-pagination>
+                </div>
+                <table style="margin-top:10px;">
+                    <thead><tr><th>手机号</th><th>IMEI</th><th>IMSI</th><th>域名</th><th>应用名称</th><th>最近使用时间</th></tr></thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in tunnelListData" :key="idx">
+                            <td>{{ item.mobile || '-' }}</td>
+                            <td>{{ item.imei || '-' }}</td>
+                            <td>{{ item.imsi || '-' }}</td>
+                            <td>{{ item.domain }}</td>
+                            <td>{{ item.app_name || '-' }}</td>
+                            <td>{{ formatDate(item.capture_time) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Content List -->
+            <div class="card">
+                <div class="top20-header">
+                    <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">访问内容使用详情</div>
+                    <el-pagination v-model:current-page="contentListPage" :page-size="20" :total="contentListTotal"
+                        layout="total, prev, pager, next" @current-change="loadContentList" small></el-pagination>
+                </div>
+                <table style="margin-top:10px;">
+                    <thead><tr><th>手机号</th><th>IMEI</th><th>IMSI</th><th>域名</th><th>URL</th><th>USER_AGENT</th><th>协议</th><th>应用</th><th>最近使用时间</th><th>操作</th></tr></thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in contentListData" :key="idx">
+                            <td>{{ item.mobile || '-' }}</td>
+                            <td>{{ item.imei || '-' }}</td>
+                            <td>{{ item.imsi || '-' }}</td>
+                            <td>{{ item.domain || '-' }}</td>
+                            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">{{ item.url || '-' }}</td>
+                            <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;">{{ item.user_agent || '-' }}</td>
+                            <td><span class="proto-tag" :class="getProtoClass(item.tunnel_proto_type)">{{ item.tunnel_proto_type || '-' }}</span></td>
+                            <td>{{ item.app_name || '-' }}</td>
+                            <td>{{ formatDate(item.capture_time) }}</td>
+                            <td><el-button size="small" type="primary" link @click="viewContentDetail(item.id)">详情</el-button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Detail Dialog -->
+            <el-dialog v-model="detailDialogVisible" title="详细信息" width="760px">
+                <div class="detail-grid">
+                    <div class="detail-item" v-for="(val, key) in detailFields" :key="key">
+                        <div class="dl">{{ key }}</div>
+                        <div class="dv">{{ val }}</div>
+                    </div>
+                </div>
+                <template #footer><el-button @click="detailDialogVisible=false">关闭</el-button></template>
+            </el-dialog>
+        </div>
+
+        <!-- ==================== TAB: 智能查询 ==================== -->
+        <div v-show="currentTab==='search'">
+            <!-- Results -->
+            <div v-if="searchResults.length > 0">
+                <div style="padding:8px 0 12px;color:#888;font-size:13px;">共找到 <strong style="color:#333;">{{ searchResults.length }}</strong> 条记录</div>
+                <div class="result-cards">
+                    <div class="result-card" v-for="(item, idx) in searchResults" :key="idx">
+                        <div class="avatar-box">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-header">
+                                <span class="icon-flag">&#128222;</span>
+                                手机号: {{ item.mobile || '-' }}
+                                <span v-if="item.imsi" style="color:#888;font-weight:400;">(IMSI:{{ item.imsi }})</span>
+                            </div>
+                            <div class="info-row">
+                                <div class="field">标签: <span class="tag">{{ item.terminal_type || '暂无' }}</span></div>
+                                <div class="field">境外应用: <span>{{ item.app_name || '0' }}</span></div>
+                                <div class="field">境外网站: <span>{{ item.domain || '0' }}</span></div>
+                                <div class="field">翻墙工具: <span class="proto-tag" :class="getProtoClass(item.tunnel_proto_type)">{{ item.tunnel_proto_type || '0' }}</span></div>
+                            </div>
+                            <div class="info-row" style="margin-top:4px;">
+                                <div class="field">IMEI: <span style="font-family:monospace;font-size:11px;">{{ item.imei || '-' }}</span></div>
+                                <div class="field">服务器: <span>{{ item.tunnel_server_ip || '-' }}</span></div>
+                            </div>
+                            <div class="info-row" style="margin-top:4px;">
+                                <div class="field">最近使用: <span>{{ formatDate(item.handle_datetime) }}</span></div>
+                            </div>
+                            <div class="actions">
+                                <el-button size="small" type="primary" @click="viewDetail(item.mobile)">查看详情</el-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" v-if="searchResults.length === 0 && hasSearched">
+                <div class="empty-state"><div class="icon">&#128230;</div><div>暂无查询结果</div></div>
+            </div>
+
+            <div class="card" v-if="!hasSearched">
+                <div class="empty-state"><div class="icon">&#128269;</div><div>请输入查询条件进行检索</div><div style="font-size:12px;margin-top:8px;color:#aaa;">支持手机号、IMEI、IMSI、域名、应用等多种查询方式</div></div>
+            </div>
+
+            <!-- Detail Dialog for search -->
+            <el-dialog v-model="searchDetailVisible" title="手机号详细信息" width="800px">
+                <div class="table-container" style="max-height:500px;overflow-y:auto;">
+                    <div v-for="(item, idx) in searchDetailData" :key="idx" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+                        <div v-if="item.app_package_name" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">包名</span><br>{{ item.app_package_name }}</div>
+                        <div v-if="item.app_name" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">应用名</span><br>{{ item.app_name }}</div>
+                        <div v-if="item.domain" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">域名</span><br>{{ item.domain }}</div>
+                        <div v-if="item.tunnel_proto_type" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">协议</span><br><span class="proto-tag" :class="getProtoClass(item.tunnel_proto_type)">{{ item.tunnel_proto_type }}</span></div>
+                        <div v-if="item.tunnel_server_ip" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">服务器</span><br>{{ item.tunnel_server_ip }}</div>
+                        <div v-if="item.content_s" style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">内容</span><br>{{ item.content_s }}</div>
+                        <div style="background:#f8f9fa;padding:8px;border-radius:4px;font-size:12px;"><span style="color:#999;">时间</span><br>{{ formatDate(item.handle_datetime) }}</div>
+                    </div>
+                </div>
+                <template #footer><el-button @click="searchDetailVisible=false">关闭</el-button></template>
+            </el-dialog>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+// 从后端加载配置，失败时降级为相对路径
+async function initApp() {
+    let apiBase = '/api';
+    try {
+        const r = await fetch('/api/config');
+        const d = await r.json();
+        apiBase = d.data.api_base_url.replace(/\/api$/, '') + '/api';
+    } catch(e) {}
+
+    createApp({
+        data() {
+            return {
+                // Tab state
+                currentTab: 'stats',
+            // Summary
+            summary: {},
+            // Time range
+            timeRange: '7',
+            // Rank data
+            installAppRank: [], tunnelToolRank: [], protocolRank: [], decryptRank: [],
+            airportRank: [], proxyServerRank: [],
+            // Detail data
+            appListData: [], appListPage: 1, appListTotal: 0,
+            tunnelListData: [], tunnelListPage: 1, tunnelListTotal: 0,
+            contentListData: [], contentListPage: 1, contentListTotal: 0,
+            detailDialogVisible: false, currentDetail: {},
+            // Search
+            searchForm: { keyword:'', mobile:'', imei:'', imsi:'', domain:'', app_package_name:'', app_name:'', tunnel_server_ip:'' },
+            searchFilterProto: '',
+            searchResults: [], searchLoading: false, hasSearched: false,
+            domainOptions: [], appOptions: [], serverOptions: [],
+            searchDetailVisible: false, searchDetailData: []
+        }
+    },
+    computed: {
+        detailFields() {
+            const d = this.currentDetail;
+            const map = {
+                '手机号': d.mobile, 'IMEI': d.imei, 'IMSI': d.imsi,
+                '应用包名': d.app_package_name, '应用名称': d.app_name,
+                '域名': d.domain, 'URL': d.url, 'USER_AGENT': d.user_agent,
+                '协议类型': d.tunnel_proto_type, '服务器 IP': d.tunnel_server_ip,
+                '解密内容': d.content_s, '终端类型': d.terminal_type,
+                '源 IP': d.src_ip, '目的 IP': d.dst_ip,
+                '时间': d.handle_datetime ? this.formatDate(d.handle_datetime) : null,
+                '最近使用时间': d.capture_time ? this.formatDate(d.capture_time) : null
+            };
+            const r = {};
+            for (const [k,v] of Object.entries(map)) { if(v !== null && v !== undefined && v !== '') r[k] = v; }
+            return r;
+        }
+    },
+    mounted() {
+        this.loadSummary();
+        this.loadRankData();
+        this.loadDetailData();
+        this.loadFilterOptions();
+    },
+    methods: {
+        // ===== Tab switching =====
+        switchTab(tab) {
+            this.currentTab = tab;
+        },
+
+        // ===== Summary & Rank =====
+        async loadSummary() {
+            const r = await fetch(`${apiBase}/summary`);
+            this.summary = (await r.json()).data || {};
+        },
+        async loadRankData() {
+            const endpoints = ['install-app-rank','tunnel-tool-rank','protocol-rank','decrypt-rank','airport-website-rank','proxy-server-rank'];
+            const keys = ['installAppRank','tunnelToolRank','protocolRank','decryptRank','airportRank','proxyServerRank'];
+            const timeRange = this.timeRange !== 'all' ? `&time_range=${this.timeRange}` : '';
+            for (let i = 0; i < endpoints.length; i++) {
+                const r = await fetch(`${apiBase}/stats/${endpoints[i]}?time_range=${this.timeRange === 'all' ? '' : this.timeRange}`);
+                this[keys[i]] = (await r.json()).data || [];
+            }
+        },
+
+        // ===== Detail =====
+        async loadDetailData() {
+            this.loadAppList();
+            this.loadTunnelList();
+            this.loadContentList();
+        },
+        async loadAppList() {
+            const r = await fetch(`${apiBase}/detail/app-list?page=${this.appListPage}&page_size=20`);
+            const d = await r.json();
+            this.appListData = d.data || []; this.appListTotal = d.total || 0;
+        },
+        async loadTunnelList() {
+            const r = await fetch(`${apiBase}/detail/tunnel-list?page=${this.tunnelListPage}&page_size=20`);
+            const d = await r.json();
+            this.tunnelListData = d.data || []; this.tunnelListTotal = d.total || 0;
+        },
+        async loadContentList() {
+            const r = await fetch(`${apiBase}/detail/content-list?page=${this.contentListPage}&page_size=20`);
+            const d = await r.json();
+            this.contentListData = d.data || []; this.contentListTotal = d.total || 0;
+        },
+        async viewContentDetail(id) {
+            const r = await fetch(`${apiBase}/detail/content-detail/${id}`);
+            this.currentDetail = (await r.json()).data || {};
+            this.detailDialogVisible = true;
+        },
+
+        // ===== Search =====
+        async loadFilterOptions() {
+            try {
+                const rd = await fetch(`${apiBase}/detail/tunnel-top20`);
+                this.domainOptions = [...new Set(((await rd.json()).data||[]).map(d=>d.domain))];
+                const ra = await fetch(`${apiBase}/detail/app-top20`);
+                this.appOptions = [...new Set(((await ra.json()).data||[]).map(d=>d.app_name).filter(Boolean))];
+                const rs = await fetch(`${apiBase}/stats/proxy-server-rank`);
+                this.serverOptions = [...new Set(((await rs.json()).data||[]).map(d=>d.tunnel_server_ip).filter(Boolean))];
+            } catch(e) { console.error('加载筛选选项失败:', e); }
+        },
+        async loadAllRecords() {
+            this.searchLoading = true;
+            this.hasSearched = true;
+            try {
+                const r = await fetch(`${apiBase}/search`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ keyword: '' })
+                });
+                const d = await r.json();
+                this.searchResults = d.data || [];
+            } catch(e) { console.error('加载全部记录失败:', e); }
+            finally { this.searchLoading = false; }
+        },
+        autoSearch() {
+            if (this.searchForm.domain || this.searchForm.app_name || this.searchForm.tunnel_server_ip || this.searchFilterProto) {
+                this.handleSearch();
+            }
+        },
+        async handleSearch() {
+            this.searchLoading = true;
+            this.hasSearched = true;
+            try {
+                const body = { ...this.searchForm };
+                if (this.searchFilterProto) body.tunnel_proto_type = this.searchFilterProto;
+                if (!body.keyword) body.keyword = null;
+                const r = await fetch(`${apiBase}/search`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const d = await r.json();
+                this.searchResults = d.data || [];
+            } catch(e) { console.error(e); }
+            finally { this.searchLoading = false; }
+        },
+        resetSearch() {
+            this.searchForm = { keyword:'', mobile:'', imei:'', imsi:'', domain:'', app_package_name:'', app_name:'', tunnel_server_ip:'' };
+            this.searchFilterProto = '';
+            this.searchResults = []; this.hasSearched = false;
+        },
+        async viewDetail(mobile) {
+            if (!mobile) return;
+            const r = await fetch(`${apiBase}/search/detail/${mobile}`);
+            this.searchDetailData = (await r.json()).data || [];
+            this.searchDetailVisible = true;
+        },
+
+        // ===== Helpers =====
+        getProtoClass(proto) {
+            if (!proto) return 'proto-default';
+            const p = proto.toLowerCase();
+            if (p.includes('shadowsocks') || p.includes('ss')) return 'proto-ss';
+            if (p.includes('vmess')) return 'proto-vmess';
+            if (p.includes('trojan')) return 'proto-trojan';
+            if (p.includes('vless')) return 'proto-vless';
+            return 'proto-default';
+        },
+        formatDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleString('zh-CN', { year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit' });
+        }
+    }
+}).use(ElementPlus).mount('#app');
+}
+
+initApp();
+</script>
+</body>
+</html>

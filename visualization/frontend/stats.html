@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主页统计 - 翻墙数据可视化系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.8/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .nav-links a {
+            color: white; text-decoration: none; padding: 8px 16px; margin-left: 10px;
+            border-radius: 6px; font-size: 14px; opacity: 0.9;
+        }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        .nav-links a.active { background: rgba(255,255,255,0.3); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .card {
+            background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 16px; font-weight: 600; color: #333;
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-card { padding: 20px; border-radius: 8px; text-align: center; color: white; }
+        .stat-card:nth-child(1) { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .stat-card:nth-child(4) { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .stat-value { font-size: 28px; font-weight: bold; }
+        .stat-label { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        .chart-container { width: 100%; height: 320px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #333; }
+        tr:hover { background: #f8f9fa; }
+        .back-btn {
+            display: inline-block; padding: 8px 16px;
+            background: rgba(255,255,255,0.2); color: white;
+            text-decoration: none; border-radius: 6px; font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div><a href="/" class="back-btn">返回首页</a></div>
+            <h1>主页统计</h1>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="stats.html" class="active">主页统计</a>
+                <a href="detail.html">翻墙详情</a>
+                <a href="search.html">查询检索</a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-title">数据概览</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ summary.total_users || 0 }}</div>
+                        <div class="stat-label">总用户数</div>
+                        <div class="stat-label" style="margin-top:8px;font-size:11px">今日：{{ summary.today_users || 0 }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ summary.total_apps || 0 }}</div>
+                        <div class="stat-label">总应用数</div>
+                        <div class="stat-label" style="margin-top:8px;font-size:11px">今日：{{ summary.today_apps || 0 }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ summary.total_servers || 0 }}</div>
+                        <div class="stat-label">代理服务器数</div>
+                        <div class="stat-label" style="margin-top:8px;font-size:11px">今日：{{ summary.today_servers || 0 }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ summary.total_records || 0 }}</div>
+                        <div class="stat-label">总记录数</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">① 安装维度 - 安装翻墙工具/小众应用统计</div>
+                <div id="installAppChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">② 识别维度 - 使用翻墙工具统计</div>
+                <div id="tunnelToolChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">③ 协议识别 - 翻墙协议识别统计</div>
+                <div id="protocolChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">④ 解密维度 - 翻墙内容解密统计</div>
+                <div id="decryptChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⑤ 代理服务器 - 每日访问用户数</div>
+                <div id="proxyServerChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⑤ 代理服务器排行 Top 20</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>排名</th><th>服务器 IP</th><th>用户数</th><th>访问次数</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in proxyServerRank" :key="index">
+                                <td>{{ index + 1 }}</td>
+                                <td>{{ item.tunnel_server_ip }}</td>
+                                <td>{{ item.user_count }}</td>
+                                <td>{{ item.access_count }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    summary: {},
+                    installAppData: [],
+                    tunnelToolData: [],
+                    protocolData: [],
+                    decryptData: [],
+                    proxyServerData: [],
+                    proxyServerRank: []
+                }
+            },
+            mounted() {
+                this.loadSummary();
+                this.loadInstallAppData();
+                this.loadTunnelToolData();
+                this.loadProtocolData();
+                this.loadDecryptData();
+                this.loadProxyServerData();
+                this.loadProxyServerRank();
+            },
+            methods: {
+                async loadSummary() {
+                    const res = await fetch(`${API_BASE}/summary`);
+                    const data = await res.json();
+                    this.summary = data.data || {};
+                },
+                async loadInstallAppData() {
+                    const res = await fetch(`${API_BASE}/stats/install-app`);
+                    const data = await res.json();
+                    this.installAppData = data.data || [];
+                    this.$nextTick(() => this.renderInstallAppChart());
+                },
+                async loadTunnelToolData() {
+                    const res = await fetch(`${API_BASE}/stats/tunnel-tool`);
+                    const data = await res.json();
+                    this.tunnelToolData = data.data || [];
+                    this.$nextTick(() => this.renderTunnelToolChart());
+                },
+                async loadProtocolData() {
+                    const res = await fetch(`${API_BASE}/stats/tunnel-protocol`);
+                    const data = await res.json();
+                    this.protocolData = data.data || [];
+                    this.$nextTick(() => this.renderProtocolChart());
+                },
+                async loadDecryptData() {
+                    const res = await fetch(`${API_BASE}/stats/tunnel-decrypt`);
+                    const data = await res.json();
+                    this.decryptData = data.data || [];
+                    this.$nextTick(() => this.renderDecryptChart());
+                },
+                async loadProxyServerData() {
+                    const res = await fetch(`${API_BASE}/stats/proxy-server`);
+                    const data = await res.json();
+                    this.proxyServerData = data.data || [];
+                    this.$nextTick(() => this.renderProxyServerChart());
+                },
+                async loadProxyServerRank() {
+                    const res = await fetch(`${API_BASE}/stats/proxy-server-rank`);
+                    const data = await res.json();
+                    this.proxyServerRank = data.data || [];
+                },
+                renderInstallAppChart() {
+                    const chart = echarts.init(document.getElementById('installAppChart'));
+                    const reversedData = [...this.installAppData].reverse();
+                    chart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['每日用户数', '累计用户数'] },
+                        xAxis: { type: 'category', data: reversedData.map(d => d.stat_date) },
+                        yAxis: { type: 'value' },
+                        series: [
+                            { name: '每日用户数', type: 'bar', data: reversedData.map(d => d.daily_users), itemStyle: { color: '#4facfe' } },
+                            { name: '累计用户数', type: 'line', data: reversedData.map(d => d.accumulated_users), itemStyle: { color: '#667eea' } }
+                        ]
+                    });
+                },
+                renderTunnelToolChart() {
+                    const chart = echarts.init(document.getElementById('tunnelToolChart'));
+                    const reversedData = [...this.tunnelToolData].reverse();
+                    chart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['每日用户数', '累计用户数'] },
+                        xAxis: { type: 'category', data: reversedData.map(d => d.stat_date) },
+                        yAxis: { type: 'value' },
+                        series: [
+                            { name: '每日用户数', type: 'bar', data: reversedData.map(d => d.daily_users), itemStyle: { color: '#43e97b' } },
+                            { name: '累计用户数', type: 'line', data: reversedData.map(d => d.accumulated_users), itemStyle: { color: '#38f9d7' } }
+                        ]
+                    });
+                },
+                renderProtocolChart() {
+                    const chart = echarts.init(document.getElementById('protocolChart'));
+                    const reversedData = [...this.protocolData].reverse();
+                    chart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['每日用户数', '累计用户数'] },
+                        xAxis: { type: 'category', data: reversedData.map(d => d.stat_date) },
+                        yAxis: { type: 'value' },
+                        series: [
+                            { name: '每日用户数', type: 'bar', data: reversedData.map(d => d.daily_users), itemStyle: { color: '#fa709a' } },
+                            { name: '累计用户数', type: 'line', data: reversedData.map(d => d.accumulated_users), itemStyle: { color: '#fee140' } }
+                        ]
+                    });
+                },
+                renderDecryptChart() {
+                    const chart = echarts.init(document.getElementById('decryptChart'));
+                    const reversedData = [...this.decryptData].reverse();
+                    chart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['每日用户数', '累计用户数'] },
+                        xAxis: { type: 'category', data: reversedData.map(d => d.stat_date) },
+                        yAxis: { type: 'value' },
+                        series: [
+                            { name: '每日用户数', type: 'bar', data: reversedData.map(d => d.daily_users), itemStyle: { color: '#f093fb' } },
+                            { name: '累计用户数', type: 'line', data: reversedData.map(d => d.accumulated_users), itemStyle: { color: '#f5576c' } }
+                        ]
+                    });
+                },
+                renderProxyServerChart() {
+                    const chart = echarts.init(document.getElementById('proxyServerChart'));
+                    const reversedData = [...this.proxyServerData].reverse();
+                    chart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['每日用户数', '累计用户数'] },
+                        xAxis: { type: 'category', data: reversedData.map(d => d.stat_date) },
+                        yAxis: { type: 'value' },
+                        series: [
+                            { name: '每日用户数', type: 'bar', data: reversedData.map(d => d.daily_users), itemStyle: { color: '#a8edea' } },
+                            { name: '累计用户数', type: 'line', data: reversedData.map(d => d.accumulated_users), itemStyle: { color: '#fed6e3' } }
+                        ]
+                    });
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

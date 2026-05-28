@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询检索 - 翻墙数据可视化系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.8/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin-left: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        .nav-links a.active { background: rgba(255,255,255,0.3); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-item { display: flex; flex-direction: column; }
+        .form-item label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        th { background: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; white-space: nowrap; }
+        tr:hover { background: #f8f9fa; }
+        .table-container { max-height: 600px; overflow-y: auto; }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .result-info {
+            padding: 10px 0;
+            color: #666;
+            font-size: 13px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div>
+                <a href="/" class="back-btn">返回首页</a>
+            </div>
+            <h1>查询检索</h1>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="stats.html">主页统计</a>
+                <a href="detail.html">翻墙详情</a>
+                <a href="search.html" class="active">查询检索</a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-title">查询条件</div>
+                <div class="search-form">
+                    <div class="form-item">
+                        <label>手机号</label>
+                        <el-input v-model="searchForm.mobile" placeholder="请输入手机号" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>IMEI</label>
+                        <el-input v-model="searchForm.imei" placeholder="请输入 IMEI" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>IMSI</label>
+                        <el-input v-model="searchForm.imsi" placeholder="请输入 IMSI" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>域名</label>
+                        <el-input v-model="searchForm.domain" placeholder="请输入域名" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>应用包名</label>
+                        <el-input v-model="searchForm.app_package_name" placeholder="请输入应用包名" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>应用名称</label>
+                        <el-input v-model="searchForm.app_name" placeholder="请输入应用名称" clearable></el-input>
+                    </div>
+                    <div class="form-item">
+                        <label>代理服务器 IP</label>
+                        <el-input v-model="searchForm.tunnel_server_ip" placeholder="请输入服务器 IP" clearable></el-input>
+                    </div>
+                    <div class="btn-group">
+                        <el-button type="primary" @click="handleSearch" :loading="searchLoading">
+                            <span v-if="!searchLoading">🔍 查询</span>
+                            <span v-else>查询中...</span>
+                        </el-button>
+                        <el-button @click="resetSearch">重置</el-button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" v-if="searchResults.length > 0">
+                <div class="card-title">查询结果</div>
+                <div class="result-info">共找到 <strong>{{ searchResults.length }}</strong> 条记录</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>手机号</th>
+                                <th>IMEI</th>
+                                <th>IMSI</th>
+                                <th>应用包名</th>
+                                <th>应用名称</th>
+                                <th>域名</th>
+                                <th>协议类型</th>
+                                <th>服务器 IP</th>
+                                <th>终端类型</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in searchResults" :key="index">
+                                <td>
+                                    <span class="tag" v-if="item.mobile">{{ item.mobile }}</span>
+                                    <span v-else>-</span>
+                                </td>
+                                <td>{{ item.imei || '-' }}</td>
+                                <td>{{ item.imsi || '-' }}</td>
+                                <td style="font-family: monospace;">{{ item.app_package_name || '-' }}</td>
+                                <td>{{ item.app_name || '-' }}</td>
+                                <td>{{ item.domain || '-' }}</td>
+                                <td>{{ item.tunnel_proto_type || '-' }}</td>
+                                <td>{{ item.tunnel_server_ip || '-' }}</td>
+                                <td>{{ item.terminal_type || '-' }}</td>
+                                <td>{{ formatDate(item.handle_datetime) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" v-if="searchResults.length === 0 && hasSearched">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <div>暂无查询结果</div>
+                    <div style="font-size: 12px; margin-top: 8px;">请尝试其他查询条件</div>
+                </div>
+            </div>
+
+            <div class="card" v-if="!hasSearched">
+                <div class="empty-state">
+                    <div class="icon">🔍</div>
+                    <div>请输入查询条件</div>
+                    <div style="font-size: 12px; margin-top: 8px;">支持手机号、IMEI、IMSI、域名、应用等多种查询方式</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    searchForm: {
+                        mobile: '',
+                        imei: '',
+                        imsi: '',
+                        domain: '',
+                        app_package_name: '',
+                        app_name: '',
+                        tunnel_server_ip: ''
+                    },
+                    searchResults: [],
+                    searchLoading: false,
+                    hasSearched: false
+                }
+            },
+            methods: {
+                async handleSearch() {
+                    this.searchLoading = true;
+                    this.hasSearched = true;
+                    try {
+                        const res = await fetch(`${API_BASE}/search`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.searchForm)
+                        });
+                        const data = await res.json();
+                        this.searchResults = data.data || [];
+                    } catch (e) {
+                        console.error('搜索失败:', e);
+                    } finally {
+                        this.searchLoading = false;
+                    }
+                },
+                resetSearch() {
+                    this.searchForm = {
+                        mobile: '',
+                        imei: '',
+                        imsi: '',
+                        domain: '',
+                        app_package_name: '',
+                        app_name: '',
+                        tunnel_server_ip: ''
+                    };
+                    this.searchResults = [];
+                    this.hasSearched = false;
+                },
+                formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    const date = new Date(dateStr);
+                    return date.toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

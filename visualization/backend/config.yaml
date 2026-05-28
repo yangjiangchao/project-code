@@ -1,0 +1,19 @@
+# 翻墙数据可视化系统配置文件
+
+# 数据库配置
+database:
+  host: localhost
+  port: 5432
+  name: visualization
+  user: visualization
+  password: viz2026
+
+# 服务配置
+server:
+  host: 0.0.0.0
+  port: 8000
+
+# API 配置
+api:
+  # 前端访问 API 的基础地址（部署时修改为实际域名/IP）
+  base_url: http://localhost:8000/api

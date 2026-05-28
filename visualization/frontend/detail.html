@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翻墙详情 - 翻墙数据可视化系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.8/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.3/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin-left: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        .nav-links a.active { background: rgba(255,255,255,0.3); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; }
+        tr:hover { background: #f8f9fa; }
+        .table-container { overflow-x: auto; }
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .tag-ss { background: #e3f2fd; color: #1976d2; }
+        .tag-vmess { background: #f3e5f5; color: #7b1fa2; }
+        .tag-trojan { background: #ffebee; color: #c62828; }
+        .tag-vless { background: #fff3e0; color: #e65100; }
+        .tag-default { background: #f5f5f5; color: #616161; }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .rank-num {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+            background: #f0f0f0;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .rank-num.top1 { background: #ffd700; color: #fff; }
+        .rank-num.top2 { background: #c0c0c0; color: #fff; }
+        .rank-num.top3 { background: #cd7f32; color: #fff; }
+        .pagination-container {
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 0 0 0;
+        }
+        .detail-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .info-label { font-size: 12px; color: #999; margin-bottom: 5px; }
+        .info-value { font-size: 14px; color: #333; font-weight: 500; word-break: break-all; }
+        .view-detail-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .view-detail-btn:hover { background: #5a6fd6; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div>
+                <a href="/" class="back-btn">返回首页</a>
+            </div>
+            <h1>翻墙详情</h1>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="stats.html">主页统计</a>
+                <a href="detail.html" class="active">翻墙详情</a>
+                <a href="search.html">查询检索</a>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- 详情展示 1: 安装应用使用详情 -->
+            <div class="card">
+                <div class="card-title">⑦ 详情展示 1 - 安装应用使用详情</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>手机号</th>
+                                <th>IMEI</th>
+                                <th>IMSI</th>
+                                <th>应用包名</th>
+                                <th>应用名称</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in appListData" :key="index">
+                                <td>{{ item.mobile || '-' }}</td>
+                                <td>{{ item.imei || '-' }}</td>
+                                <td>{{ item.imsi || '-' }}</td>
+                                <td style="font-family: monospace;">{{ item.app_package_name }}</td>
+                                <td>{{ item.app_name || '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <el-pagination
+                        v-model:current-page="appListPage"
+                        :page-size="50"
+                        :total="appListTotal"
+                        layout="total, prev, pager, next"
+                        @current-change="loadAppList"
+                    ></el-pagination>
+                </div>
+            </div>
+
+            <!-- 详情展示 2: 翻墙工具使用详情 -->
+            <div class="card">
+                <div class="card-title">⑧ 详情展示 2 - 翻墙工具使用详情</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>手机号</th>
+                                <th>IMEI</th>
+                                <th>IMSI</th>
+                                <th>域名</th>
+                                <th>应用名称</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in tunnelListData" :key="index">
+                                <td>{{ item.mobile || '-' }}</td>
+                                <td>{{ item.imei || '-' }}</td>
+                                <td>{{ item.imsi || '-' }}</td>
+                                <td>{{ item.domain }}</td>
+                                <td>{{ item.app_name || '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <el-pagination
+                        v-model:current-page="tunnelListPage"
+                        :page-size="50"
+                        :total="tunnelListTotal"
+                        layout="total, prev, pager, next"
+                        @current-change="loadTunnelList"
+                    ></el-pagination>
+                </div>
+            </div>
+
+            <!-- 详情展示 3: 访问内容使用详情 -->
+            <div class="card">
+                <div class="card-title">⑨ 详情展示 3 - 访问内容使用详情</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>手机号</th>
+                                <th>IMEI</th>
+                                <th>IMSI</th>
+                                <th>域名</th>
+                                <th>访问 URL</th>
+                                <th>USER_AGENT</th>
+                                <th>协议类型</th>
+                                <th>应用名称</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in contentListData" :key="index">
+                                <td>{{ item.mobile || '-' }}</td>
+                                <td>{{ item.imei || '-' }}</td>
+                                <td>{{ item.imsi || '-' }}</td>
+                                <td>{{ item.domain || '-' }}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ item.url || '-' }}</td>
+                                <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">{{ item.user_agent || '-' }}</td>
+                                <td>
+                                    <span class="tag" :class="getProtocolTag(item.tunnel_proto_type)">{{ item.tunnel_proto_type || '-' }}</span>
+                                </td>
+                                <td>{{ item.app_name || '-' }}</td>
+                                <td>
+                                    <button class="view-detail-btn" @click="viewContentDetail(item.id)">查看详情</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <el-pagination
+                        v-model:current-page="contentListPage"
+                        :page-size="50"
+                        :total="contentListTotal"
+                        layout="total, prev, pager, next"
+                        @current-change="loadContentList"
+                    ></el-pagination>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详情对话框 -->
+        <el-dialog v-model="detailDialogVisible" title="详细信息" width="800px">
+            <div class="info-grid">
+                <div class="info-item" v-for="(value, label) in filteredDetails" :key="label">
+                    <div class="info-label">{{ label }}</div>
+                    <div class="info-value">{{ value }}</div>
+                </div>
+            </div>
+            <template #footer>
+                <el-button @click="detailDialogVisible = false">关闭</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    appListData: [],
+                    appListPage: 1,
+                    appListTotal: 0,
+                    tunnelListData: [],
+                    tunnelListPage: 1,
+                    tunnelListTotal: 0,
+                    contentListData: [],
+                    contentListPage: 1,
+                    contentListTotal: 0,
+                    detailDialogVisible: false,
+                    currentDetail: {}
+                }
+            },
+            computed: {
+                filteredDetails() {
+                    const labels = {
+                        '手机号': this.currentDetail.mobile,
+                        'IMEI': this.currentDetail.imei,
+                        'IMSI': this.currentDetail.imsi,
+                        '应用包名': this.currentDetail.app_package_name,
+                        '应用名称': this.currentDetail.app_name,
+                        '域名': this.currentDetail.domain,
+                        'URL': this.currentDetail.url,
+                        'USER_AGENT': this.currentDetail.user_agent,
+                        '协议类型': this.currentDetail.tunnel_proto_type,
+                        '服务器 IP': this.currentDetail.tunnel_server_ip,
+                        '解密内容': this.currentDetail.content_s,
+                        '终端类型': this.currentDetail.terminal_type,
+                        '源 IP': this.currentDetail.src_ip,
+                        '目的 IP': this.currentDetail.dst_ip,
+                        '时间': this.currentDetail.handle_datetime ? this.formatDate(this.currentDetail.handle_datetime) : null
+                    };
+                    const result = {};
+                    for (const [label, value] of Object.entries(labels)) {
+                        if (value !== null && value !== undefined && value !== '') {
+                            result[label] = value;
+                        }
+                    }
+                    return result;
+                }
+            },
+            mounted() {
+                this.loadAppList();
+                this.loadTunnelList();
+                this.loadContentList();
+            },
+            methods: {
+                async loadAppList() {
+                    const res = await fetch(`${API_BASE}/detail/app-list?page=${this.appListPage}&page_size=50`);
+                    const data = await res.json();
+                    this.appListData = data.data || [];
+                    this.appListTotal = data.total || 0;
+                },
+                async loadTunnelList() {
+                    const res = await fetch(`${API_BASE}/detail/tunnel-list?page=${this.tunnelListPage}&page_size=50`);
+                    const data = await res.json();
+                    this.tunnelListData = data.data || [];
+                    this.tunnelListTotal = data.total || 0;
+                },
+                async loadContentList() {
+                    const res = await fetch(`${API_BASE}/detail/content-list?page=${this.contentListPage}&page_size=50`);
+                    const data = await res.json();
+                    this.contentListData = data.data || [];
+                    this.contentListTotal = data.total || 0;
+                },
+                async viewContentDetail(id) {
+                    const res = await fetch(`${API_BASE}/detail/content-detail/${id}`);
+                    const data = await res.json();
+                    this.currentDetail = data.data || {};
+                    this.detailDialogVisible = true;
+                },
+                formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    const date = new Date(dateStr);
+                    return date.toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+                formatBytes(bytes) {
+                    if (!bytes) return '-';
+                    const kb = bytes / 1024;
+                    if (kb < 1024) return kb.toFixed(2) + ' KB';
+                    const mb = kb / 1024;
+                    if (mb < 1024) return mb.toFixed(2) + ' MB';
+                    return (mb / 1024).toFixed(2) + ' GB';
+                },
+                getProtocolTag(proto) {
+                    if (!proto) return 'tag-default';
+                    const p = proto.toLowerCase();
+                    if (p.includes('shadowsocks') || p.includes('ss')) return 'tag-ss';
+                    if (p.includes('vmess')) return 'tag-vmess';
+                    if (p.includes('trojan')) return 'tag-trojan';
+                    if (p.includes('vless')) return 'tag-vless';
+                    return 'tag-default';
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
