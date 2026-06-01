@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: viz_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: visualization
+      POSTGRES_PASSWORD: viz2026
+      POSTGRES_DB: visualization
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # FastAPI 后端
+  fastapi:
+    build: ./visualization/backend
+    container_name: viz_fastapi
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=visualization
+      - DATABASE_PASSWORD=viz2026
+      - DATABASE_NAME=visualization
+
+volumes:
+  postgres_data:
+

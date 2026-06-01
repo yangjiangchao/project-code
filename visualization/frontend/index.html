@@ -512,7 +512,7 @@
                     <div class="rank-header"><span class="rank-title">④ 翻墙解密数据</span></div>
                     <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
                     <div class="rank-item" v-for="(item, idx) in decryptRank" :key="idx">
-                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.domain || '-' }}</span></span>
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.tool_name || item.domain || '-' }}</span></span>
                         <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
                     </div>
                 </div>
@@ -520,7 +520,7 @@
                     <div class="rank-header"><span class="rank-title">⑤ 机场网站</span></div>
                     <div class="rank-columns-header"><span class="col-label">名称</span><span class="col-stat">人数</span><span class="col-stat">使用次数</span></div>
                     <div class="rank-item" v-for="(item, idx) in airportRank" :key="idx">
-                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.domain || '-' }}</span></span>
+                        <span class="rank-item-left"><span class="rank-num" :class="{'top1':idx===0,'top2':idx===1,'top3':idx===2}">{{idx+1}}</span><span class="rank-name">{{ item.tool_name || '-' }}</span></span>
                         <span class="rank-item-right"><span class="rank-item-count">{{ item.user_count }}</span><span class="rank-item-count">{{ item.access_count }}</span></span>
                     </div>
                 </div>

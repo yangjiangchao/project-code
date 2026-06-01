@@ -125,6 +125,7 @@ async def get_tunnel_tool_stats():
             SUM(COUNT(DISTINCT mobile) FILTER (WHERE mobile IS NOT NULL AND mobile <> '' AND (auth_account IS NOT NULL OR imei IS NOT NULL OR imsi IS NOT NULL))) OVER (ORDER BY DATE(handle_datetime)) as accumulated_users
         FROM nb_mass_resource_all_stream
         WHERE app_package_name IS NULL
+          AND NOT (tool_name = '机场网站' OR app_type = '100348246')
         GROUP BY DATE(handle_datetime)
         ORDER BY stat_date DESC
         LIMIT 30
@@ -336,6 +337,7 @@ async def get_tunnel_tool_rank(time_range: str = ""):
         {time_condition}
           AND tool_name IS NOT NULL
           AND tool_name <> ''
+          AND NOT (tool_name = '机场网站' OR app_type = '100348246')
         GROUP BY tool_name
         ORDER BY user_count DESC
         LIMIT 10
@@ -393,6 +395,7 @@ async def get_decrypt_rank(time_range: str = ""):
 
     cur.execute(f"""
         SELECT
+            tool_name,
             domain,
             COUNT(DISTINCT mobile) FILTER (WHERE auth_account IS NOT NULL OR imei IS NOT NULL OR imsi IS NOT NULL) as user_count,
             COUNT(*) as access_count
@@ -401,7 +404,7 @@ async def get_decrypt_rank(time_range: str = ""):
           AND tunnel_proto_type IS NOT NULL AND content_s IS NOT NULL
           AND domain IS NOT NULL
           AND domain <> ''
-        GROUP BY domain
+        GROUP BY tool_name, domain
         ORDER BY user_count DESC
         LIMIT 10
     """, params if params else {})
@@ -427,15 +430,15 @@ async def get_airport_website_rank(time_range: str = ""):
 
     cur.execute(f"""
         SELECT
-            domain,
+            tool_name,
             COUNT(DISTINCT mobile) FILTER (WHERE auth_account IS NOT NULL OR imei IS NOT NULL OR imsi IS NOT NULL) as user_count,
             COUNT(*) as access_count
         FROM nb_mass_resource_all_stream
         {time_condition}
           AND (tool_name = '机场网站' OR app_type = '100348246')
-          AND domain IS NOT NULL
-          AND domain <> ''
-        GROUP BY domain
+          AND tool_name IS NOT NULL
+          AND tool_name <> ''
+        GROUP BY tool_name
         ORDER BY user_count DESC
         LIMIT 10
     """, params if params else {})
